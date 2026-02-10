@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Denpee - Receipt Generator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="controls no-print">
+        <input type="number" id="in10" placeholder="Total 10% (Eat-in)" oninput="calc()">
+        <input type="number" id="in8" placeholder="Total 8% (Takeout)" oninput="calc()">
+        <button onclick="window.print()">Print Receipt</button>
+    </div>
+
+    <div class="receipt">
+        <div class="top-row">
+            <h1 class="title">領収証<span>(控)</span></h1>
+            <div class="recipient">
+                <input type="text" class="dotted-input"> 様
+            </div>
+            <div class="no-box">No. <input type="text"></div>
+        </div>
+
+        <div class="main-content">
+            <div class="breakdown-table">
+                <div class="table-header">内 訳</div>
+                <div class="row"><span>現 金</span><span id="cash-out"></span></div>
+                <div class="row"><span>小切手</span><span>/</span></div>
+                <div class="row"><span>手 形</span><span>/</span></div>
+                <div class="tax-section">
+                    <div class="row"><span>消費税(10%)</span><span id="t10"></span></div>
+                    <div class="row"><span>消費税(8%)</span><span id="t8"></span></div>
+                    <div class="row"><span>内税額計</span><span id="t-total"></span></div>
+                </div>
+            </div>
+
+            <div class="memo-area">
+                <div class="memo-row">但 <input type="text" class="dotted-input"></div>
+                <div class="date-row">
+                    入金日 <input type="text" class="short"> 年 <input type="text" class="short"> 月 <input type="text" class="short"> 日 上記正に領収いたしました
+                </div>
+                <div class="registration">
+                    登録番号 <input type="text" value="T">
+                </div>
+            </div>
+        </div>
+        <div class="star">★</div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
