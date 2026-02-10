@@ -2,51 +2,226 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Denpee - Receipt Generator</title>
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Denpee - 領収証生成</title>
+    <style>
+        /* Typography - Using system fonts that mimic Japanese Mincho style */
+        body {
+            background-color: #525659;
+            font-family: "MS Mincho", "Sawarabi Mincho", serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 20px;
+        }
+
+        /* The Physical Receipt Container */
+        .receipt {
+            width: 167mm;
+            height: 82mm;
+            background: white;
+            padding: 4mm 6mm;
+            box-sizing: border-box;
+            position: relative;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header Section */
+        .header {
+            display: flex;
+            align-items: flex-end;
+            margin-bottom: 4mm;
+        }
+
+        .title-area {
+            flex: 1;
+            border-bottom: 1.5px solid black;
+        }
+
+        .title-area h1 {
+            font-size: 24px;
+            margin: 0;
+            display: inline-block;
+        }
+
+        .title-area span {
+            font-size: 14px;
+            margin-left: 4px;
+        }
+
+        .customer-name {
+            flex: 2;
+            margin: 0 15px;
+            border-bottom: 1.5px solid black;
+            font-size: 20px;
+            display: flex;
+            align-items: flex-end;
+        }
+
+        .customer-name input {
+            width: 100%;
+            border: none;
+            font-size: 20px;
+            font-family: inherit;
+        }
+
+        /* Main Content Grid */
+        .content {
+            display: grid;
+            grid-template-columns: 58mm 1fr;
+            flex-grow: 1;
+            border-top: 2.5px solid black;
+        }
+
+        /* Left Column (Breakdown) */
+        .breakdown {
+            border-right: 1px solid black;
+            padding-right: 2mm;
+        }
+
+        .label-sm { font-size: 11px; border-bottom: 1px solid black; padding: 1px; }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid black;
+            height: 20px;
+            font-size: 13px;
+        }
+
+        .tax-group { margin-top: 10px; border-top: 1px solid black; }
+        .tax-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            border-bottom: 1px dotted #666;
+            height: 18px;
+            align-items: center;
+        }
+
+        /* Right Column (Details) */
+        .details {
+            padding-left: 4mm;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .memo-line {
+            border-bottom: 1px solid black;
+            padding: 8px 0;
+            font-size: 15px;
+        }
+
+        .date-line {
+            border-bottom: 1px solid black;
+            padding: 12px 0;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        .registration {
+            margin-top: auto;
+            font-size: 11px;
+            padding-bottom: 2mm;
+        }
+
+        /* Form Inputs */
+        input { border: none; background: transparent; font-family: inherit; outline: none; }
+        .num-input { text-align: right; width: 60%; font-weight: bold; }
+        .date-input { width: 30px; text-align: center; border-bottom: 1px solid #ccc; }
+
+        /* Controls */
+        .controls {
+            background: #333;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .star { position: absolute; left: 8mm; top: 22mm; font-size: 18px; }
+
+        @media print {
+            body { background: white; padding: 0; }
+            .controls { display: none; }
+            .receipt { box-shadow: none; margin: 0; border: none; }
+            /* Force the exact size for printer */
+            @page { size: 167mm 82mm; margin: 0; }
+        }
+    </style>
 </head>
 <body>
+
     <div class="controls no-print">
-        <input type="number" id="in10" placeholder="Total 10% (Eat-in)" oninput="calc()">
-        <input type="number" id="in8" placeholder="Total 8% (Takeout)" oninput="calc()">
-        <button onclick="window.print()">Print Receipt</button>
+        <label>10% Total: <input type="number" id="in10" value="0" oninput="update()"></label>
+        <label>8% Total: <input type="number" id="in8" value="0" oninput="update()"></label>
+        <button onclick="window.print()" style="padding: 5px 15px; cursor: pointer;">Print Receipt</button>
     </div>
 
     <div class="receipt">
-        <div class="top-row">
-            <h1 class="title">領収証<span>(控)</span></h1>
-            <div class="recipient">
-                <input type="text" class="dotted-input"> 様
+        <div class="star">★</div>
+        
+        <div class="header">
+            <div class="title-area">
+                <h1>領収証</h1><span>(控)</span>
             </div>
-            <div class="no-box">No. <input type="text"></div>
+            <div class="customer-name">
+                <input type="text" placeholder="Customers Name"> 様
+            </div>
+            <div style="font-size: 11px; border-bottom: 1px dotted black;">No. <input type="text" style="width: 40px;"></div>
         </div>
 
-        <div class="main-content">
-            <div class="breakdown-table">
-                <div class="table-header">内 訳</div>
-                <div class="row"><span>現 金</span><span id="cash-out"></span></div>
+        <div class="content">
+            <div class="breakdown">
+                <div class="label-sm">内 訳</div>
+                <div class="row"><span>現 金</span><span id="out-total">0</span></div>
                 <div class="row"><span>小切手</span><span>/</span></div>
                 <div class="row"><span>手 形</span><span>/</span></div>
-                <div class="tax-section">
-                    <div class="row"><span>消費税(10%)</span><span id="t10"></span></div>
-                    <div class="row"><span>消費税(8%)</span><span id="t8"></span></div>
-                    <div class="row"><span>内税額計</span><span id="t-total"></span></div>
+                
+                <div class="tax-group">
+                    <div class="tax-row"><span>消費税(10%)</span><span id="out-t10">0</span></div>
+                    <div class="tax-row"><span>消費税(8%)</span><span id="out-t8">0</span></div>
+                    <div class="tax-row"><span>内税額計</span><span id="out-t-sum">0</span></div>
                 </div>
             </div>
 
-            <div class="memo-area">
-                <div class="memo-row">但 <input type="text" class="dotted-input"></div>
-                <div class="date-row">
-                    入金日 <input type="text" class="short"> 年 <input type="text" class="short"> 月 <input type="text" class="short"> 日 上記正に領収いたしました
+            <div class="details">
+                <div class="memo-line">
+                    但 <input type="text" style="width: 90%;" placeholder="お食事代として">
+                </div>
+                <div class="date-line">
+                    入金日 <input type="text" class="date-input"> 年 
+                    <input type="text" class="date-input"> 月 
+                    <input type="text" class="date-input"> 日 上記正に領収いたしました
                 </div>
                 <div class="registration">
-                    登録番号 <input type="text" value="T">
+                    登録番号 <input type="text" value="T" style="width: 150px;">
                 </div>
             </div>
         </div>
-        <div class="star">★</div>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        function update() {
+            const val10 = parseFloat(document.getElementById('in10').value) || 0;
+            const val8 = parseFloat(document.getElementById('in8').value) || 0;
+
+            // Calculate tax included (Floor rounding is standard for JP tax)
+            const t10 = Math.floor(val10 - (val10 / 1.10));
+            const t8 = Math.floor(val8 - (val8 / 1.08));
+            const total = val10 + val8;
+
+            document.getElementById('out-total').innerText = total.toLocaleString();
+            document.getElementById('out-t10').innerText = t10.toLocaleString();
+            document.getElementById('out-t8').innerText = t8.toLocaleString();
+            document.getElementById('out-t-sum').innerText = (t10 + t8).toLocaleString();
+        }
+    </script>
 </body>
 </html>
