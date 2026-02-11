@@ -14,7 +14,7 @@
             align-items: center;
             margin: 0;
             padding: 20px 0;
-            overflow-x: hidden; /* Prevent horizontal scrollbars during resize */
+            overflow-x: hidden;
         }
 
         /* --- Control Panel --- */
@@ -55,7 +55,6 @@
         .btn:hover { opacity: 0.9; }
 
         /* --- Zoom Wrapper --- */
-        /* This container ensures the layout flow respects the scaled receipt size */
         #sheet-wrapper {
             display: flex;
             justify-content: center;
@@ -74,7 +73,7 @@
             display: flex;
             flex-direction: column;
             color: #000;
-            transform-origin: top center; /* Zooms from the top center */
+            transform-origin: top center;
         }
 
         /* --- Input Overrides --- */
@@ -131,18 +130,23 @@
             margin-left: 5px;
         }
 
-        /* --- Big Amount Field --- */
+        /* --- Big Amount Field (Adjusted) --- */
         .amount-zone {
             width: 100%;
             height: 12mm;
             display: flex;
             align-items: center;
-            justify-content: center;
+            /* CHANGED: Left aligned */
+            justify-content: flex-start;
+            /* CHANGED: Padded to align under '証' (approx 18mm) */
+            padding-left: 18mm; 
             margin-bottom: 1mm;
+            box-sizing: border-box;
         }
         .big-money-input {
-            width: 80%;
-            text-align: center;
+            /* CHANGED: Left aligned text */
+            text-align: left;
+            width: 60%;
             font-size: 22pt;
             font-weight: bold;
             border-bottom: 1px solid transparent; 
@@ -164,7 +168,7 @@
         /* --- Main Body Grid --- */
         .body-grid {
             display: grid;
-            grid-template-columns: 50mm 1fr; 
+            grid-template-columns: 60mm 1fr; 
             flex-grow: 1;
             height: 100%;
         }
@@ -203,19 +207,28 @@
             border-bottom: 1px dotted #000;
             font-size: 8pt;
         }
-        .val-span { font-size: 11pt; }
+        .val-right { 
+            text-align: right; 
+            flex-grow: 1; 
+            white-space: nowrap; 
+            font-size: 9pt; 
+        }
+        .val-input {
+            text-align: right;
+            width: 100px;
+        }
 
         /* --- Right Column (Details) --- */
         .col-right {
             padding-left: 4mm;
-            padding-top: 2mm; 
+            padding-top: 0mm; 
             display: flex;
             flex-direction: column;
         }
         .memo-row {
             display: flex;
             border-bottom: 1px solid #000;
-            height: 8mm;
+            height: 7mm;
             align-items: center;
             font-size: 12pt;
         }
@@ -223,11 +236,11 @@
 
         .date-row {
             border-bottom: 1px solid #000;
-            height: 10mm;
+            height: 8mm;
             display: flex;
             align-items: center;
             white-space: nowrap; 
-            margin-top: 4mm;
+            margin-top: 2mm; 
         }
         .date-input { width: 30px; text-align: center; font-weight: bold; }
         .date-spacer { width: 10px; }
@@ -238,8 +251,16 @@
             margin-top: 4mm; 
             font-size: 8pt;
             padding-bottom: 1mm;
+            display: flex;
+            flex-direction: column; 
+            align-items: flex-start; 
         }
-        .reg-input { width: 200px; font-size: 9pt; }
+        .reg-input { 
+            width: 100%; 
+            font-size: 10pt; 
+            text-align: left; 
+            margin-top: 2px;
+        }
 
         /* --- Print Media Query --- */
         @media print {
@@ -249,7 +270,6 @@
             .sheet {
                 box-shadow: none;
                 margin: 0;
-                /* Reset zoom for printing */
                 transform: none !important; 
                 width: 175mm;
                 height: 82mm;
@@ -299,7 +319,7 @@
                     <div class="uchiwake-header">内 訳</div>
                     <div class="money-row">
                         <span>現 金</span>
-                        <span class="val-span" id="val-cash"></span>
+                        <input type="text" class="paper-input val-input" id="inp-cash">
                     </div>
                     <div class="money-row">
                         <span>小切手</span>
@@ -313,15 +333,15 @@
                     <div class="tax-section">
                         <div class="tax-row">
                             <span>消費税(10%)</span>
-                            <span id="val-tax10"></span>
+                            <span class="val-right" id="val-tax10"></span>
                         </div>
                         <div class="tax-row">
                             <span>消費税(8%)</span>
-                            <span id="val-tax8"></span>
+                            <span class="val-right" id="val-tax8"></span>
                         </div>
                         <div class="tax-row" style="border-bottom: none;">
                             <span>内税額計</span>
-                            <span id="val-tax-total"></span>
+                            <span class="val-right" id="val-tax-total"></span>
                         </div>
                     </div>
                 </div>
@@ -339,7 +359,8 @@
                         <span class="received-text">上記正に領収いたしました</span>
                     </div>
                     <div class="reg-row">
-                        登録番号 <input type="text" class="paper-input reg-input" id="inp-reg" value="T2810881971678">
+                        <span>登録番号</span>
+                        <input type="text" class="paper-input reg-input" id="inp-reg" value="T2810881971678">
                     </div>
                 </div>
             </div>
@@ -351,25 +372,13 @@
         function fitToScreen() {
             const sheet = document.querySelector('.sheet');
             const wrapper = document.getElementById('sheet-wrapper');
-            
-            // 95% of available screen width
             const targetWidth = window.innerWidth * 0.95;
-            
-            // Current physical width in pixels (175mm approx 661px)
             const currentWidth = sheet.offsetWidth;
-            
-            // Calculate scale factor
             const scale = targetWidth / currentWidth;
-            
-            // Apply scale
             sheet.style.transform = `scale(${scale})`;
-            
-            // Adjust wrapper height to prevent vertical overlap or huge whitespace
             wrapper.style.width = `${currentWidth * scale}px`;
             wrapper.style.height = `${sheet.offsetHeight * scale}px`;
         }
-
-        // Run on load and resize
         window.addEventListener('load', fitToScreen);
         window.addEventListener('resize', fitToScreen);
 
@@ -379,25 +388,43 @@
             const in10 = parseFloat(document.getElementById('calc-10').value) || 0;
             const in8 = parseFloat(document.getElementById('calc-8').value) || 0;
 
-            // Standard Rounding (四捨五入)
-            // Example: 9600 -> 872.72... rounds to 873
             const tax10 = Math.round(in10 - (in10 / 1.10));
             const tax8 = Math.round(in8 - (in8 / 1.08));
             
             const total = in10 + in8;
             const totalTax = tax10 + tax8;
 
-            // Update Breakdown
-            document.getElementById('val-cash').innerText = total > 0 ? total.toLocaleString() : '';
-            document.getElementById('val-tax10').innerText = tax10 > 0 ? tax10.toLocaleString() : '';
-            document.getElementById('val-tax8').innerText = tax8 > 0 ? tax8.toLocaleString() : '';
-            document.getElementById('val-tax-total').innerText = totalTax > 0 ? totalTax.toLocaleString() : '';
+            if (in10 > 0) {
+                document.getElementById('val-tax10').innerText = `${in10.toLocaleString()}円 (税込) ${tax10.toLocaleString()}円`;
+            } else {
+                document.getElementById('val-tax10').innerText = "";
+            }
 
-            // Update Big Total Field (No space between Yen and Number)
+            if (in8 > 0) {
+                document.getElementById('val-tax8').innerText = `${in8.toLocaleString()}円 (税込) ${tax8.toLocaleString()}円`;
+            } else {
+                document.getElementById('val-tax8').innerText = "";
+            }
+
+            document.getElementById('val-tax-total').innerText = totalTax > 0 ? `${totalTax.toLocaleString()}円` : '';
+
+            // Update Big Total - TIGHTER FORMAT (No space)
             if (total > 0) {
-                document.getElementById('inp-big-total').value = `¥${total.toLocaleString()} -`;
+                document.getElementById('inp-big-total').value = `¥${total.toLocaleString()}-`;
             } else {
                 document.getElementById('inp-big-total').value = '';
+            }
+
+            // Auto-Fill Memo
+            const memoField = document.getElementById('inp-memo');
+            if (in10 > 0 && in8 > 0) {
+                memoField.value = "ご飲食代、テイクアウト代(軽減対象)として";
+            } else if (in10 > 0) {
+                memoField.value = "ご飲食代として";
+            } else if (in8 > 0) {
+                memoField.value = "テイクアウト代(軽減対象)として";
+            } else {
+                memoField.value = "";
             }
         }
 
@@ -406,12 +433,11 @@
             document.getElementById('calc-10').value = '';
             document.getElementById('calc-8').value = '';
             
-            const textInputs = ['inp-name', 'inp-no', 'inp-big-total', 'inp-memo', 'inp-y', 'inp-m', 'inp-d'];
+            const textInputs = ['inp-name', 'inp-no', 'inp-big-total', 'inp-cash', 'inp-memo', 'inp-y', 'inp-m', 'inp-d'];
             textInputs.forEach(id => {
                 document.getElementById(id).value = '';
             });
             
-            // Reset Reg Number to default (Hardcoded ID)
             document.getElementById('inp-reg').value = 'T2810881971678';
 
             calculate();
