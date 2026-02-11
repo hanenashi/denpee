@@ -60,7 +60,6 @@
             display: flex;
             justify-content: center;
             align-items: flex-start;
-            /* Height will be set by JS to match scaled content */
         }
 
         /* --- The Receipt (Physical Paper) --- */
@@ -366,7 +365,6 @@
             sheet.style.transform = `scale(${scale})`;
             
             // Adjust wrapper height to prevent vertical overlap or huge whitespace
-            // (Scaling with transform doesn't affect flow, so we force wrapper size)
             wrapper.style.width = `${currentWidth * scale}px`;
             wrapper.style.height = `${sheet.offsetHeight * scale}px`;
         }
@@ -381,8 +379,11 @@
             const in10 = parseFloat(document.getElementById('calc-10').value) || 0;
             const in8 = parseFloat(document.getElementById('calc-8').value) || 0;
 
-            const tax10 = Math.floor(in10 - (in10 / 1.10));
-            const tax8 = Math.floor(in8 - (in8 / 1.08));
+            // Standard Rounding (四捨五入)
+            // Example: 9600 -> 872.72... rounds to 873
+            const tax10 = Math.round(in10 - (in10 / 1.10));
+            const tax8 = Math.round(in8 - (in8 / 1.08));
+            
             const total = in10 + in8;
             const totalTax = tax10 + tax8;
 
@@ -392,9 +393,9 @@
             document.getElementById('val-tax8').innerText = tax8 > 0 ? tax8.toLocaleString() : '';
             document.getElementById('val-tax-total').innerText = totalTax > 0 ? totalTax.toLocaleString() : '';
 
-            // Update Big Total Field
+            // Update Big Total Field (No space between Yen and Number)
             if (total > 0) {
-                document.getElementById('inp-big-total').value = `¥ ${total.toLocaleString()} -`;
+                document.getElementById('inp-big-total').value = `¥${total.toLocaleString()} -`;
             } else {
                 document.getElementById('inp-big-total').value = '';
             }
@@ -410,7 +411,7 @@
                 document.getElementById(id).value = '';
             });
             
-            // Reset Reg Number to default
+            // Reset Reg Number to default (Hardcoded ID)
             document.getElementById('inp-reg').value = 'T2810881971678';
 
             calculate();
