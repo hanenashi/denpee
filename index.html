@@ -12,9 +12,14 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            /* Center vertically if there is extra space */
+            justify-content: flex-start; 
             margin: 0;
             padding: 20px 0;
-            overflow-x: hidden;
+            /* Prevent scrollbars */
+            overflow: hidden; 
+            height: 100vh; 
+            box-sizing: border-box;
         }
 
         /* --- Control Panel --- */
@@ -23,12 +28,13 @@
             padding: 15px 25px;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            margin-bottom: 20px;
+            margin-bottom: 10px; /* Reduced margin slightly */
             display: flex;
             gap: 20px;
             align-items: flex-end;
             font-family: sans-serif;
             z-index: 100;
+            flex-shrink: 0; /* Don't shrink the controls */
         }
         .control-group {
             display: flex;
@@ -58,7 +64,9 @@
         #sheet-wrapper {
             display: flex;
             justify-content: center;
-            align-items: flex-start;
+            align-items: center; /* Center vertically in remaining space */
+            flex-grow: 1; /* Take up all remaining space */
+            width: 100%;
         }
 
         /* --- The Receipt (Physical Paper) --- */
@@ -73,7 +81,7 @@
             display: flex;
             flex-direction: column;
             color: #000;
-            transform-origin: top center;
+            transform-origin: center center; /* Zoom from center */
         }
 
         /* --- Input Overrides --- */
@@ -136,15 +144,12 @@
             height: 12mm;
             display: flex;
             align-items: center;
-            /* CHANGED: Left aligned */
             justify-content: flex-start;
-            /* CHANGED: Padded to align under '証' (approx 18mm) */
             padding-left: 18mm; 
             margin-bottom: 1mm;
             box-sizing: border-box;
         }
         .big-money-input {
-            /* CHANGED: Left aligned text */
             text-align: left;
             width: 60%;
             font-size: 22pt;
@@ -264,9 +269,9 @@
 
         /* --- Print Media Query --- */
         @media print {
-            body { background: white; padding: 0; margin: 0; display: block; }
+            body { background: white; padding: 0; margin: 0; display: block; overflow: visible; height: auto; }
             .controls { display: none !important; }
-            #sheet-wrapper { display: block; height: auto !important; width: auto !important; }
+            #sheet-wrapper { display: block; height: auto !important; width: auto !important; margin: 0; padding: 0; }
             .sheet {
                 box-shadow: none;
                 margin: 0;
@@ -368,17 +373,38 @@
     </div>
 
     <script>
-        // --- 1. Zoom Logic ---
+        // --- 1. Smart Fit Logic (No Scrollbars) ---
         function fitToScreen() {
             const sheet = document.querySelector('.sheet');
             const wrapper = document.getElementById('sheet-wrapper');
-            const targetWidth = window.innerWidth * 0.95;
-            const currentWidth = sheet.offsetWidth;
-            const scale = targetWidth / currentWidth;
+            const controls = document.querySelector('.controls');
+
+            // Get original dimensions
+            const sheetW = sheet.offsetWidth;
+            const sheetH = sheet.offsetHeight;
+
+            // Calculate available width (95% of window)
+            const availW = window.innerWidth * 0.95;
+
+            // Calculate available height:
+            // Window Height - Control Panel Height - 40px padding/margin
+            const availH = window.innerHeight - controls.offsetHeight - 40;
+
+            // Determine scale for width and height
+            const scaleW = availW / sheetW;
+            const scaleH = availH / sheetH;
+
+            // Pick the SMALLER scale to ensure it fits both width and height (Contain)
+            const scale = Math.min(scaleW, scaleH);
+
+            // Apply Scale
             sheet.style.transform = `scale(${scale})`;
-            wrapper.style.width = `${currentWidth * scale}px`;
-            wrapper.style.height = `${sheet.offsetHeight * scale}px`;
+            
+            // Adjust wrapper to match scaled size so flexbox centers it correctly
+            wrapper.style.width = `${sheetW * scale}px`;
+            wrapper.style.height = `${sheetH * scale}px`;
         }
+
         window.addEventListener('load', fitToScreen);
         window.addEventListener('resize', fitToScreen);
 
@@ -394,6 +420,7 @@
             const total = in10 + in8;
             const totalTax = tax10 + tax8;
 
+            // Update Tax Fields
             if (in10 > 0) {
                 document.getElementById('val-tax10').innerText = `${in10.toLocaleString()}円 (税込) ${tax10.toLocaleString()}円`;
             } else {
@@ -408,7 +435,7 @@
 
             document.getElementById('val-tax-total').innerText = totalTax > 0 ? `${totalTax.toLocaleString()}円` : '';
 
-            // Update Big Total - TIGHTER FORMAT (No space)
+            // Update Big Total
             if (total > 0) {
                 document.getElementById('inp-big-total').value = `¥${total.toLocaleString()}-`;
             } else {
